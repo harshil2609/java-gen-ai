@@ -1,5 +1,6 @@
 package com.epam.training.gen.ai.controller;
 
+import com.epam.training.gen.ai.dto.ChatRequestDto;
 import com.epam.training.gen.ai.dto.RequestDto;
 import com.epam.training.gen.ai.service.UserPromptService;
 import lombok.RequiredArgsConstructor;
@@ -18,5 +19,10 @@ public class UserController {
     @PostMapping("/prompt-response")
     public ResponseEntity<String> getPromptResponse(@RequestBody RequestDto requestDto) {
         return ResponseEntity.ok(userPromptService.getPromptResponse(requestDto.getInput()));
+    }
+
+    @PostMapping("/chat")
+    public ResponseEntity<String> chatWithHistory(@RequestBody ChatRequestDto requestDto) {
+        return ResponseEntity.ok(userPromptService.getPromptResponse(requestDto));
     }
 }
