@@ -10,5 +10,6 @@ public class ChatRequestDto {
     private String prompt;
     private Double temperature = 1D;
     private Integer maxTokens = 2000;
+    private String model;
     private List<String> stopSequence = new ArrayList<>();
 }
