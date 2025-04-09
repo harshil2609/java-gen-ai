@@ -6,11 +6,13 @@ import com.epam.training.gen.ai.service.UserPromptService;
 import com.microsoft.semantickernel.Kernel;
 import com.microsoft.semantickernel.orchestration.InvocationContext;
 import com.microsoft.semantickernel.orchestration.PromptExecutionSettings;
+import com.microsoft.semantickernel.orchestration.ToolCallBehavior;
 import com.microsoft.semantickernel.services.chatcompletion.AuthorRole;
 import com.microsoft.semantickernel.services.chatcompletion.ChatCompletionService;
 import com.microsoft.semantickernel.services.chatcompletion.ChatHistory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Lookup;
 import org.springframework.stereotype.Service;
@@ -41,17 +43,19 @@ public class UserPromptServiceImpl implements UserPromptService {
         chatHistory.addUserMessage(requestDto.getPrompt());
         var response = chatCompletionService.getChatMessageContentsAsync(
                 chatHistory, getKernel(chatCompletionService),
-                new InvocationContext.Builder().withPromptExecutionSettings(PromptExecutionSettings.builder().withTemperature(requestDto.getTemperature())
+                new InvocationContext.Builder().withToolCallBehavior(ToolCallBehavior.allowAllKernelFunctions(true)).withPromptExecutionSettings(PromptExecutionSettings.builder().withTemperature(requestDto.getTemperature())
                         .withMaxTokens(requestDto.getMaxTokens()).withStopSequences(requestDto.getStopSequence()).build()).build()).block();
         var responseResult = new StringBuilder();
         if (response == null || response.isEmpty()) {
             return StringUtils.EMPTY;
         }
-        response.stream().filter(result -> result.getAuthorRole() == AuthorRole.ASSISTANT).forEach(result -> {
-            log.info(result.getContent());
-            chatHistory.addAssistantMessage(result.getContent());
-            responseResult.append(result.getContent());
-        });
+        response.stream().filter(result -> result.getAuthorRole() == AuthorRole.ASSISTANT)
+                .filter(object -> !ObjectUtils.isEmpty(object.getContent()))
+                .forEach(result -> {
+                    log.info(result.getContent());
+                    chatHistory.addAssistantMessage(result.getContent());
+                    responseResult.append(result.getContent());
+                });
         log.info(CHATBOT_RESPONSE, responseResult);
         return responseResult.toString();
     }

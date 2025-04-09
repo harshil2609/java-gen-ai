@@ -4,10 +4,13 @@ import com.azure.ai.openai.OpenAIAsyncClient;
 import com.azure.ai.openai.OpenAIClientBuilder;
 import com.azure.core.credential.AzureKeyCredential;
 import com.epam.training.gen.ai.dto.Plugin;
+import com.epam.training.gen.ai.plugin.AgeBasedOnBirthday;
+import com.epam.training.gen.ai.plugin.ConvertTemperaturePlugin;
 import com.microsoft.semantickernel.Kernel;
 import com.microsoft.semantickernel.aiservices.openai.chatcompletion.OpenAIChatCompletion;
 import com.microsoft.semantickernel.orchestration.InvocationContext;
 import com.microsoft.semantickernel.orchestration.PromptExecutionSettings;
+import com.microsoft.semantickernel.orchestration.ToolCallBehavior;
 import com.microsoft.semantickernel.plugin.KernelPlugin;
 import com.microsoft.semantickernel.plugin.KernelPluginFactory;
 import com.microsoft.semantickernel.services.chatcompletion.ChatCompletionService;
@@ -63,8 +66,16 @@ public class KernelConfiguration {
     @Bean
     @Scope(value = "prototype")
     public Kernel kernel(final ChatCompletionService chatCompletionService) {
+
+        var convertTemperaturePlugin =
+                KernelPluginFactory.createFromObject(new ConvertTemperaturePlugin(), "ConvertTemperaturePlugin");
+        var ageBasedOnBirthdayPlugin =
+                KernelPluginFactory.createFromObject(new AgeBasedOnBirthday(), "AgeBasedOnBirthday");
+
         return Kernel.builder()
                 .withAIService(ChatCompletionService.class, chatCompletionService)
+                .withPlugin(convertTemperaturePlugin)
+                .withPlugin(ageBasedOnBirthdayPlugin)
                 .build();
     }
 
@@ -74,6 +85,7 @@ public class KernelConfiguration {
                 .withPromptExecutionSettings(PromptExecutionSettings.builder()
                         .withTemperature(0.8)
                         .build())
+                .withToolCallBehavior(ToolCallBehavior.allowAllKernelFunctions(true))
                 .build();
     }
 
