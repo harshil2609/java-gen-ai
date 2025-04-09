@@ -14,9 +14,11 @@ import com.microsoft.semantickernel.services.chatcompletion.ChatCompletionServic
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Scope;
+import org.springframework.util.ObjectUtils;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.Map;
-
 
 @Configuration
 public class KernelConfiguration {
@@ -28,7 +30,7 @@ public class KernelConfiguration {
     private String azureOpenAiEndpoint;
 
     @Value("${client-azureopenai-deployment-name}")
-    private String deploymentOrModelName;
+    private String defaultDeploymentOrModelName;
 
     @Bean
     public OpenAIAsyncClient openAIAsyncClient() {
@@ -39,9 +41,14 @@ public class KernelConfiguration {
     }
 
     @Bean
-    public ChatCompletionService chatCompletionService(OpenAIAsyncClient openAIAsyncClient) {
+    @Scope(value = "prototype")
+    public ChatCompletionService chatCompletionService(
+            @Value("${client-azureopenai-deployment-name}") String deploymentOrModelName,
+            final OpenAIAsyncClient openAIAsyncClient) {
         return OpenAIChatCompletion.builder()
                 .withModelId(deploymentOrModelName)
+                .withModelId(ObjectUtils.isEmpty(deploymentOrModelName)
+                        ? defaultDeploymentOrModelName : deploymentOrModelName)
                 .withOpenAIAsyncClient(openAIAsyncClient)
                 .build();
     }
@@ -54,10 +61,10 @@ public class KernelConfiguration {
     }
 
     @Bean
-    public Kernel kernel(ChatCompletionService chatCompletionService, KernelPlugin kernelPlugin) {
+    @Scope(value = "prototype")
+    public Kernel kernel(final ChatCompletionService chatCompletionService) {
         return Kernel.builder()
                 .withAIService(ChatCompletionService.class, chatCompletionService)
-                .withPlugin(kernelPlugin)
                 .build();
     }
 
@@ -71,9 +78,15 @@ public class KernelConfiguration {
     }
 
     @Bean
-    public Map<String, PromptExecutionSettings> promptExecutionsSettingsMap() {
+    public Map<String, PromptExecutionSettings> promptExecutionsSettingsMap(
+            @Value("${client-azureopenai-deployment-name}") String deploymentOrModelName) {
         return Map.of(deploymentOrModelName, PromptExecutionSettings.builder()
                 .withTemperature(0.8)
                 .build());
+    }
+
+    @Bean
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
     }
 }
