@@ -83,7 +83,7 @@ public class KernelConfiguration {
     public InvocationContext invocationContext() {
         return InvocationContext.builder()
                 .withPromptExecutionSettings(PromptExecutionSettings.builder()
-                        .withTemperature(0.8)
+                        .withTemperature(0.0)
                         .build())
                 .withToolCallBehavior(ToolCallBehavior.allowAllKernelFunctions(true))
                 .build();
