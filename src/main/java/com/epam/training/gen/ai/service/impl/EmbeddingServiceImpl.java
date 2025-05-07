@@ -38,6 +38,20 @@ public class EmbeddingServiceImpl implements EmbeddingService {
     private final OpenAIAsyncClient openAiClient;
     private final TaskExecutor taskExecutor;
 
+    public Flux<String> buildEmbeddingAndStore(String text) {
+        return buildEmbedding(text)
+                .map(vector -> PointStruct
+                        .newBuilder()
+                        .setId(id(UUID.nameUUIDFromBytes(text.getBytes())))
+                        .setVectors(vectors(vector))
+                        .putPayload("text", value(text))
+                        .build())
+                .buffer()
+                .map(points -> qdrantClient.upsertAsync(properties.getCollectionName(), points))
+                .flatMap(this::toMono)
+                .map(result -> result.getStatus().name());
+    }
+
     public Flux<List<Float>> buildEmbedding(String input) {
         var options = new EmbeddingsOptions(List.of(input.replace("\n", "")));
         options.setDimensions(properties.getVectorSize());

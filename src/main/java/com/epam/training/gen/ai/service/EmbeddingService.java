@@ -12,4 +12,6 @@ public interface EmbeddingService {
     Flux<String> storeEmbedding(String input);
 
     Flux<Score> searchEmbedding(String input);
+
+    Flux<String> buildEmbeddingAndStore(String text);
 }
